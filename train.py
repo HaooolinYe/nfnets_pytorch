@@ -40,7 +40,8 @@ def train(config:dict) -> None:
             stochdepth_rate=config['stochdepth_rate'], 
             alpha=config['alpha'],
             se_ratio=config['se_ratio'],
-            activation=config['activation']
+            activation=config['activation'],
+            bias=config['bias']
             )
 
     transforms = Compose([
