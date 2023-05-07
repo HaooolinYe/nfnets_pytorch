@@ -66,7 +66,7 @@ activations_dict = {
 
 class NFNet(nn.Module):
     def __init__(self, num_classes:int, variant:str='F0', stochdepth_rate:float=None, 
-        alpha:float=0.2, se_ratio:float=0.5, activation:str='gelu'):
+        alpha:float=0.2, se_ratio:float=0.5, activation:str='gelu', bias:bool=True):
         super(NFNet, self).__init__()
 
         if not variant in nfnet_params:
@@ -80,7 +80,7 @@ class NFNet(nn.Module):
         self.drop_rate = block_params['drop_rate']
         self.num_classes = num_classes
 
-        self.stem = Stem(activation=activation)
+        self.stem = Stem(activation=activation, bias=bias)
 
         num_blocks, index = sum(block_params['depth']), 0
 
@@ -112,7 +112,8 @@ class NFNet(nn.Module):
                     se_ratio=se_ratio,
                     group_size=group_size,
                     stochdepth_rate=block_sd_rate,
-                    activation=activation))
+                    activation=activation,
+                    bias=bias))
 
                 in_channels = out_channels
                 index += 1
@@ -125,13 +126,13 @@ class NFNet(nn.Module):
         self.body = nn.Sequential(*blocks)
 
         final_conv_channels = 2*in_channels
-        self.final_conv = WSConv2D(in_channels=out_channels, out_channels=final_conv_channels, kernel_size=1)
+        self.final_conv = WSConv2D(in_channels=out_channels, out_channels=final_conv_channels, kernel_size=1, bias=bias)
         self.pool = nn.AvgPool2d(1)
         
         if self.drop_rate > 0.:
             self.dropout = nn.Dropout(self.drop_rate)
 
-        self.linear = nn.Linear(final_conv_channels, self.num_classes)
+        self.linear = nn.Linear(final_conv_channels, self.num_classes, bias=bias)
         nn.init.normal_(self.linear.weight, 0, 0.01)
 
     def forward(self, x):
@@ -157,14 +158,14 @@ class NFNet(nn.Module):
         return name.startswith('linear')
 
 class Stem(nn.Module):
-    def __init__(self, activation:str='gelu'):
+    def __init__(self, activation:str='gelu', bias:bool=True):
         super(Stem, self).__init__()
         
         self.activation = activations_dict[activation]
-        self.conv0 = WSConv2D(in_channels=3, out_channels=16, kernel_size=3, stride=2)
-        self.conv1 = WSConv2D(in_channels=16, out_channels=32, kernel_size=3, stride=1)
-        self.conv2 = WSConv2D(in_channels=32, out_channels=64, kernel_size=3, stride=1)
-        self.conv3 = WSConv2D(in_channels=64, out_channels=128, kernel_size=3, stride=2)
+        self.conv0 = WSConv2D(in_channels=3, out_channels=16, kernel_size=3, stride=2, bias=bias)
+        self.conv1 = WSConv2D(in_channels=16, out_channels=32, kernel_size=3, stride=1, bias=bias)
+        self.conv2 = WSConv2D(in_channels=32, out_channels=64, kernel_size=3, stride=1, bias=bias)
+        self.conv3 = WSConv2D(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=bias)
     
     def forward(self, x):
         out = self.activation(self.conv0(x))
@@ -176,7 +177,7 @@ class Stem(nn.Module):
 class NFBlock(nn.Module):
     def __init__(self, in_channels:int, out_channels:int, expansion:float=0.5, 
         se_ratio:float=0.5, stride:int=1, beta:float=1.0, alpha:float=0.2, 
-        group_size:int=1, stochdepth_rate:float=None, activation:str='gelu'):
+        group_size:int=1, stochdepth_rate:float=None, activation:str='gelu', bias:bool=True):
 
         super(NFBlock, self).__init__()
 
@@ -193,18 +194,18 @@ class NFBlock(nn.Module):
         self.width = group_size * self.groups
         self.stride = stride
 
-        self.conv0 = WSConv2D(in_channels=self.in_channels, out_channels=self.width, kernel_size=1)
-        self.conv1 = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=stride, padding=1, groups=self.groups)
-        self.conv1b = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=1, padding=1, groups=self.groups)
-        self.conv2 = WSConv2D(in_channels=self.width, out_channels=self.out_channels, kernel_size=1)
+        self.conv0 = WSConv2D(in_channels=self.in_channels, out_channels=self.width, kernel_size=1, bias=bias)
+        self.conv1 = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=stride, padding=1, groups=self.groups, bias=bias)
+        self.conv1b = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=1, padding=1, groups=self.groups,  bias=bias)
+        self.conv2 = WSConv2D(in_channels=self.width, out_channels=self.out_channels, kernel_size=1, bias=bias)
         
         self.use_projection = self.stride > 1 or self.in_channels != self.out_channels
         if self.use_projection:
             if stride > 1:
                 self.shortcut_avg_pool = nn.AvgPool2d(kernel_size=2, stride=2, padding=0 if self.in_channels==1536 else 1)
-            self.conv_shortcut = WSConv2D(self.in_channels, self.out_channels, kernel_size=1)
+            self.conv_shortcut = WSConv2D(self.in_channels, self.out_channels, kernel_size=1, bias=bias)
             
-        self.squeeze_excite = SqueezeExcite(self.out_channels, self.out_channels, se_ratio=self.se_ratio, activation=activation)
+        self.squeeze_excite = SqueezeExcite(self.out_channels, self.out_channels, se_ratio=self.se_ratio, activation=activation, bias=bias)
         self.skip_gain = nn.Parameter(torch.zeros(()))
 
         self.use_stochdepth = stochdepth_rate is not None and stochdepth_rate > 0. and stochdepth_rate < 1.
@@ -267,7 +268,7 @@ class WSConv2D(nn.Conv2d):
         )
 
 class SqueezeExcite(nn.Module):
-    def __init__(self, in_channels:int, out_channels:int, se_ratio:float=0.5, activation:str='gelu'):
+    def __init__(self, in_channels:int, out_channels:int, se_ratio:float=0.5, activation:str='gelu', bias:bool=True):
         super(SqueezeExcite, self).__init__()
 
         self.in_channels = in_channels
@@ -277,8 +278,8 @@ class SqueezeExcite(nn.Module):
         self.hidden_channels = max(1, int(self.in_channels * self.se_ratio))
         
         self.activation = activations_dict[activation]
-        self.linear = nn.Linear(self.in_channels, self.hidden_channels)
-        self.linear_1 = nn.Linear(self.hidden_channels, self.out_channels)
+        self.linear = nn.Linear(self.in_channels, self.hidden_channels, bias=bias)
+        self.linear_1 = nn.Linear(self.hidden_channels, self.out_channels, bias=bias)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
