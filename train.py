@@ -177,6 +177,7 @@ if __name__=='__main__':
     parser.add_argument('--overfit', const=True, default=False, nargs='?', help='Crop the dataset to the batch size and force model to (hopefully) overfit')
     parser.add_argument('--variant', type=str, help='NFNet variant to train', default=None)
     parser.add_argument('--pretrained', type=Path, help='Path to pre-trained weights in haiku format', default=None)
+    parser.add_argument('--dataset', type=Path, help='Path to ImageNet dataset',default=None)
     args = parser.parse_args()
     
     if not args.config.exists():
