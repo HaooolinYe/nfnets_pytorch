@@ -1,5 +1,21 @@
 # NFNet Pytorch Implementation
 
+
+Original code
+```
+!python3 ../working/nfnets_pytorch/train.py --config ../working/nfnets_pytorch/default_config.yaml --dataset ../input/
+```
+No bias + no mean (scalar invariant)
+```
+!python3 ../working/nfnets_pytorch/train.py --config ../working/nfnets_pytorch/nobias_config.yaml --dataset ../input/
+```
+Bias + no mean
+```
+!python3 ../working/nfnets_pytorch/train.py --config ../working/nfnets_pytorch/bias_nomean_config.yaml --dataset ../input/
+```
+
+
+
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/benjs/nfnets_pytorch/blob/master/demo.ipynb)
 
 This repo contains pretrained NFNet models F0-F6 with high ImageNet accuracy from the paper *High-Performance Large-Scale Image Recognition Without Normalization*. The small models are as accurate as an EfficientNet-B7, but train 8.7 times faster. The large models set a new SOTA top-1 accuracy on ImageNet.
