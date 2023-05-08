@@ -32,4 +32,4 @@ weight_decay: 0.00002 # Factor with which weights are added to gradient
 nesterov: True        # Enable nesterov correction
 
 do_clip: True         # Enable adaptive gradient clipping
-clipping: 0.03         # Adaptive gradient clipping parameter
+clipping: 0.02         # Adaptive gradient clipping parameter

@@ -11,9 +11,9 @@ alpha: 0.2            # Scaling factor at the end of each block
 se_ratio: 0.5         # Squeeze-Excite expansion ratio
 use_fp16: False       # Use 16bit floats, which lowers memory footprint. This currently sets
                       # the complete model to FP16 (will be changed to match FP16 ops from paper)
-bias: True
+bias: False
 remove_mean: True
-standardize_weight: False
+standardize_weight: True
 
 # Dataset
 dataset: '/media/benjs/ext/'  # Dataset root directory
