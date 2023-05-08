@@ -13,6 +13,7 @@ use_fp16: False       # Use 16bit floats, which lowers memory footprint. This cu
                       # the complete model to FP16 (will be changed to match FP16 ops from paper)
 bias: True
 remove_mean: True
+standardize_weight: False
 
 # Dataset
 dataset: '/media/benjs/ext/'  # Dataset root directory

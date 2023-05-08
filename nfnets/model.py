@@ -66,7 +66,7 @@ activations_dict = {
 
 class NFNet(nn.Module):
     def __init__(self, num_classes:int, variant:str='F0', stochdepth_rate:float=None, 
-        alpha:float=0.2, se_ratio:float=0.5, activation:str='gelu', bias:bool=True, remove_mean:bool=False):
+        alpha:float=0.2, se_ratio:float=0.5, activation:str='gelu', bias:bool=True, remove_mean:bool=False, standardize_weight:bool=True):
         super(NFNet, self).__init__()
 
         if not variant in nfnet_params:
@@ -80,7 +80,7 @@ class NFNet(nn.Module):
         self.drop_rate = block_params['drop_rate']
         self.num_classes = num_classes
 
-        self.stem = Stem(activation=activation, bias=bias, remove_mean=remove_mean)
+        self.stem = Stem(activation=activation, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
 
         num_blocks, index = sum(block_params['depth']), 0
 
@@ -114,7 +114,8 @@ class NFNet(nn.Module):
                     stochdepth_rate=block_sd_rate,
                     activation=activation,
                     bias=bias,
-                    remove_mean=remove_mean
+                    remove_mean=remove_mean,
+                    standardize_weight=standardize_weight,
                 ))
 
                 in_channels = out_channels
@@ -128,7 +129,7 @@ class NFNet(nn.Module):
         self.body = nn.Sequential(*blocks)
 
         final_conv_channels = 2*in_channels
-        self.final_conv = WSConv2D(in_channels=out_channels, out_channels=final_conv_channels, kernel_size=1, bias=bias, remove_mean=remove_mean)
+        self.final_conv = WSConv2D(in_channels=out_channels, out_channels=final_conv_channels, kernel_size=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
         self.pool = nn.AvgPool2d(1)
         
         if self.drop_rate > 0.:
@@ -160,14 +161,14 @@ class NFNet(nn.Module):
         return name.startswith('linear')
 
 class Stem(nn.Module):
-    def __init__(self, activation:str='gelu', bias:bool=True, remove_mean:bool=False):
+    def __init__(self, activation:str='gelu', bias:bool=True, remove_mean:bool=False, standardize_weight=True):
         super(Stem, self).__init__()
         
         self.activation = activations_dict[activation]
-        self.conv0 = WSConv2D(in_channels=3, out_channels=16, kernel_size=3, stride=2, bias=bias, remove_mean=remove_mean)
-        self.conv1 = WSConv2D(in_channels=16, out_channels=32, kernel_size=3, stride=1, bias=bias, remove_mean=remove_mean)
-        self.conv2 = WSConv2D(in_channels=32, out_channels=64, kernel_size=3, stride=1, bias=bias, remove_mean=remove_mean)
-        self.conv3 = WSConv2D(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=bias, remove_mean=remove_mean)
+        self.conv0 = WSConv2D(in_channels=3, out_channels=16, kernel_size=3, stride=2, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
+        self.conv1 = WSConv2D(in_channels=16, out_channels=32, kernel_size=3, stride=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
+        self.conv2 = WSConv2D(in_channels=32, out_channels=64, kernel_size=3, stride=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
+        self.conv3 = WSConv2D(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
     
     def forward(self, x):
         out = self.activation(self.conv0(x))
@@ -179,7 +180,7 @@ class Stem(nn.Module):
 class NFBlock(nn.Module):
     def __init__(self, in_channels:int, out_channels:int, expansion:float=0.5, 
         se_ratio:float=0.5, stride:int=1, beta:float=1.0, alpha:float=0.2, 
-        group_size:int=1, stochdepth_rate:float=None, activation:str='gelu', bias:bool=True, remove_mean:bool=False):
+        group_size:int=1, stochdepth_rate:float=None, activation:str='gelu', bias:bool=True, remove_mean:bool=False, standardize_weight: bool=True):
 
         super(NFBlock, self).__init__()
 
@@ -196,16 +197,16 @@ class NFBlock(nn.Module):
         self.width = group_size * self.groups
         self.stride = stride
 
-        self.conv0 = WSConv2D(in_channels=self.in_channels, out_channels=self.width, kernel_size=1, bias=bias, remove_mean=remove_mean)
-        self.conv1 = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=stride, padding=1, groups=self.groups, bias=bias, remove_mean=remove_mean)
-        self.conv1b = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=1, padding=1, groups=self.groups,  bias=bias, remove_mean=remove_mean)
-        self.conv2 = WSConv2D(in_channels=self.width, out_channels=self.out_channels, kernel_size=1, bias=bias, remove_mean=remove_mean)
+        self.conv0 = WSConv2D(in_channels=self.in_channels, out_channels=self.width, kernel_size=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
+        self.conv1 = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=stride, padding=1, groups=self.groups, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
+        self.conv1b = WSConv2D(in_channels=self.width, out_channels=self.width, kernel_size=3, stride=1, padding=1, groups=self.groups,  bias=bias, remove_mean=remove_mean,standardize_weight=standardize_weight)
+        self.conv2 = WSConv2D(in_channels=self.width, out_channels=self.out_channels, kernel_size=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
         
         self.use_projection = self.stride > 1 or self.in_channels != self.out_channels
         if self.use_projection:
             if stride > 1:
                 self.shortcut_avg_pool = nn.AvgPool2d(kernel_size=2, stride=2, padding=0 if self.in_channels==1536 else 1)
-            self.conv_shortcut = WSConv2D(self.in_channels, self.out_channels, kernel_size=1, bias=bias, remove_mean=remove_mean)
+            self.conv_shortcut = WSConv2D(self.in_channels, self.out_channels, kernel_size=1, bias=bias, remove_mean=remove_mean, standardize_weight=standardize_weight)
             
         self.squeeze_excite = SqueezeExcite(self.out_channels, self.out_channels, se_ratio=self.se_ratio, activation=activation, bias=bias)
         self.skip_gain = nn.Parameter(torch.zeros(()))
@@ -241,11 +242,12 @@ class NFBlock(nn.Module):
 #  https://github.com/deepmind/deepmind-research/tree/master/nfnets
 class WSConv2D(nn.Conv2d):
     def __init__(self, in_channels: int, out_channels: int, kernel_size, stride = 1, padding = 0,
-        dilation = 1, groups: int = 1, bias: bool = True, padding_mode: str = 'zeros', remove_mean: bool=False):
+        dilation = 1, groups: int = 1, bias: bool = True, padding_mode: str = 'zeros', remove_mean: bool=False, standardize_weight: bool=True):
 
         super(WSConv2D, self).__init__(in_channels, out_channels, kernel_size, stride, 
             padding, dilation, groups, bias, padding_mode)
         self.remove_mean = remove_mean
+        self.standardized_weight = standardize_weight
         nn.init.xavier_normal_(self.weight)
         self.gain = nn.Parameter(torch.ones(self.out_channels, 1, 1, 1))
         self.register_buffer('eps', torch.tensor(1e-4, requires_grad=False), persistent=False)
@@ -256,6 +258,8 @@ class WSConv2D(nn.Conv2d):
         mean = torch.mean(self.weight, axis=[1,2,3], keepdims=True)
         var = torch.var(self.weight, axis=[1,2,3], keepdims=True)
         scale = torch.rsqrt(torch.maximum(var * self.fan_in, self.eps))
+        if not self.standardized_weights:
+            return self.weight
         if self.remove_mean:
             return self.weight * scale * self.gain
         else:

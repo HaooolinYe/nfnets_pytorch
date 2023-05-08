@@ -13,6 +13,7 @@ use_fp16: False       # Use 16bit floats, which lowers memory footprint. This cu
                       # the complete model to FP16 (will be changed to match FP16 ops from paper)
 bias: True
 remove_mean: False
+standardize_weight: True
 
 # Dataset
 dataset: '/media/benjs/ext/'  # Dataset root directory
@@ -31,4 +32,4 @@ weight_decay: 0.00002 # Factor with which weights are added to gradient
 nesterov: True        # Enable nesterov correction
 
 do_clip: True         # Enable adaptive gradient clipping
-clipping: 0.1         # Adaptive gradient clipping parameter
+clipping: 0.03         # Adaptive gradient clipping parameter

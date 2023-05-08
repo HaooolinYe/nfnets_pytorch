@@ -42,7 +42,8 @@ def train(config:dict) -> None:
             se_ratio=config['se_ratio'],
             activation=config['activation'],
             bias=config['bias'],
-            remove_mean=config['remove_mean']
+            remove_mean=config['remove_mean'],
+            standardize_weight=config['standardize_weight'],
             )
 
     transforms = Compose([
