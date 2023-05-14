@@ -25,7 +25,7 @@ batch_size: 64        # Batch size
 epochs: 90           # Number of epochs
 overfit: False        # Train on one batch size only
 
-learning_rate: 0.01    # Learning rate
+learning_rate: 0.1    # Learning rate
 scale_lr: True        # Scale learning rate with batch size. lr = lr*batch_size/256
 momentum: 0.9         # Contribution of earlier gradient to gradient update
 weight_decay: 0.00002 # Factor with which weights are added to gradient
