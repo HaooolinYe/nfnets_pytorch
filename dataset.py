@@ -3,6 +3,9 @@ from typing import Callable
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torchvision.datasets import ImageNet
+import torch
+import torchvision
+import torchvision.transforms as transforms
 
 import os
 from torch.utils.data import Dataset
@@ -47,3 +50,65 @@ class ImageNetKaggle(Dataset):
 
 def get_dataset(path:Path, transforms:Callable=None) -> Dataset:
     return ImageNetKaggle(str(path), split='train', transform=transforms)
+
+
+def load_tiny_imagenet(data_path, train_transform, test_transform):
+
+
+    # # Load all the images
+    #
+    # #     train_transform = albumentations_transforms(p=1.0, is_train=True)
+    # #     test_transform = albumentations_transforms(p=1.0, is_train=False)
+    # train_transform = transform = transforms.Compose([
+    #     transforms.RandomResizedCrop(224),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.AutoAugment(),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                          std=[0.229, 0.224, 0.225])
+    # ])
+    # test_transform = transform_test = transforms.Compose([
+    #     transforms.Resize(256),
+    #     transforms.CenterCrop(224),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                          std=[0.229, 0.224, 0.225])
+    # ])
+    # Load all of the images, transforming them
+    train_dataset = torchvision.datasets.ImageFolder(
+        root=data_path + 'train',
+        transform=train_transform
+    )
+
+    test_dataset = torchvision.datasets.ImageFolder(
+        root=data_path + 'test',
+        transform=test_transform
+    )
+
+    #     # Split into training (90% and testing (10%) datasets)
+    #     train_size = int(0.9 * len(full_dataset))
+    #     test_size = len(full_dataset) - train_size
+
+    #     # use torch.utils.data.random_split for training/test split
+    train_dataset, _ = torch.utils.data.random_split(train_dataset, [10000, 90000])
+    test_dataset, _ = torch.utils.data.random_split(test_dataset, [1000, 9000])
+
+    # # define a loader for the training data we can iterate through in 50-image batches
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_dataset,
+    #     batch_size=128,
+    #     #         batch_size=512,
+    #     num_workers=2,
+    #     shuffle=False
+    # )
+    #
+    # # define a loader for the testing data we can iterate through in 50-image batches
+    # test_loader = torch.utils.data.DataLoader(
+    #     test_dataset,
+    #     batch_size=128,
+    #     #         batch_size=512,
+    #     num_workers=2,
+    #     shuffle=False
+    # )
+
+    return train_dataset, test_dataset

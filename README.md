@@ -4,6 +4,7 @@
 Original code
 ```
 !python3 ../working/nfnets_pytorch/train.py --config ../working/nfnets_pytorch/default_config.yaml --dataset ../input/
+!python3 ../working/nfnets_pytorch/train_tinyimgnet.py --config ../working/nfnets_pytorch/default_config.yaml --dataset ../input/tiny-imagenet/tiny-imagenet-200/
 ```
 No bias + no mean (scalar invariant)
 ```
