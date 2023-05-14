@@ -76,12 +76,12 @@ def load_tiny_imagenet(data_path, train_transform, test_transform):
     # ])
     # Load all of the images, transforming them
     train_dataset = torchvision.datasets.ImageFolder(
-        root=data_path + 'train',
+        root=os.path.join(data_path,'train'),
         transform=train_transform
     )
 
     test_dataset = torchvision.datasets.ImageFolder(
-        root=data_path + 'test',
+        root=os.path.join(data_path,'test'),
         transform=test_transform
     )
 
