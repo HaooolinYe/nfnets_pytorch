@@ -194,11 +194,8 @@ def train(config: dict) -> None:
         eval_correct, eval_total, eval_avg_loss = evaluate(model, test_loader, criterion, device)
         print("For test: ")
         print(
-            # f"\rEpoch {epoch + 1:0{epoch_padding}d}/{config['epochs']}"
-              # f"\tImg {processed_imgs:{batch_padding}d}/{len(dataloader.dataset)}"
               f"\tLoss {eval_avg_loss :6.4f}"
-              f"\tAcc {100.0 * eval_correct / eval_total:5.3f}%\t",
-              sep=' ', end='', flush=True)
+              f"\tAcc {100.0 * eval_correct / eval_total:5.3f}%\t")
 
         global_step = epoch * len(dataloader) + step
         writer.add_scalar('training/loss', running_loss / (step + 1), global_step)
