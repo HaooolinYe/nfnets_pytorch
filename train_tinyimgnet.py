@@ -26,7 +26,7 @@ def evaluate(model, test_loader, criterion, device):
         correct = 0
         total = 0
         all_losses = []
-        for step, data in enumerate(dataloader):
+        for step, data in enumerate(test_loader):
             inputs = data[0].half().to(device) if config['use_fp16'] else data[0].to(device)
             labels = data[1].to(device)
             # images, labels = batch['image'].to(device), batch['label'].to(device)
