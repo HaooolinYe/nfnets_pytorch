@@ -90,8 +90,8 @@ def load_tiny_imagenet(data_path, train_transform, test_transform):
     #     test_size = len(full_dataset) - train_size
 
     #     # use torch.utils.data.random_split for training/test split
-    train_dataset, _ = torch.utils.data.random_split(train_dataset, [10000, 90000])
-    test_dataset, _ = torch.utils.data.random_split(test_dataset, [1000, 9000])
+    train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [10000, 500])
+    # test_dataset, _ = torch.utils.data.random_split(test_dataset, [1000, 9000])
 
     # # define a loader for the training data we can iterate through in 50-image batches
     # train_loader = torch.utils.data.DataLoader(
