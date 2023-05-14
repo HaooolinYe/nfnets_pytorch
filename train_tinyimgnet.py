@@ -20,6 +20,27 @@ import torchvision.transforms as transforms
 from dataset import get_dataset, load_tiny_imagenet
 from nfnets import NFNet, SGD_AGC, pretrained_nfnet
 
+def evaluate(model, test_loader, criterion, device):
+    model.eval()
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        all_losses = []
+        for step, data in enumerate(dataloader):
+            inputs = data[0].half().to(device) if config['use_fp16'] else data[0].to(device)
+            labels = data[1].to(device)
+            # images, labels = batch['image'].to(device), batch['label'].to(device)
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            loss = criterion(outputs, labels)
+            all_losses.append(loss)
+        avg_loss = torch.stack(all_losses).mean().item()
+
+
+    return correct, total, avg_loss
 
 def train(config: dict) -> None:
     if config['device'].startswith('cuda'):
@@ -67,7 +88,7 @@ def train(config: dict) -> None:
     train_dataset, test_dataset = load_tiny_imagenet(data_path=config['dataset'], train_transform=train_transform, test_transform=test_transform)
 
     if config['overfit']:
-        dataset = Subset(dataset, [i * 50 for i in range(0, 1000)])
+        dataset = Subset(train_dataset, [i * 50 for i in range(0, 1000)])
 
     dataloader = DataLoader(
         dataset=train_dataset,
@@ -169,7 +190,15 @@ def train(config: dict) -> None:
                   sep=' ', end='', flush=True)
 
         elapsed = time.time() - epoch_time
-        print(f"({elapsed:.3f}s, {elapsed / len(dataloader):.3}s/step, {elapsed / len(dataset):.3}s/img)")
+        print(f"({elapsed:.3f}s, {elapsed / len(dataloader):.3}s/step, {elapsed / len(train_dataset):.3}s/img)")
+        eval_correct, eval_total, eval_avg_loss = evaluate(model, test_loader, criterion, device)
+        print("For test: ")
+        print(
+            # f"\rEpoch {epoch + 1:0{epoch_padding}d}/{config['epochs']}"
+              # f"\tImg {processed_imgs:{batch_padding}d}/{len(dataloader.dataset)}"
+              f"\tLoss {eval_avg_loss :6.4f}"
+              f"\tAcc {100.0 * eval_correct / eval_total:5.3f}%\t",
+              sep=' ', end='', flush=True)
 
         global_step = epoch * len(dataloader) + step
         writer.add_scalar('training/loss', running_loss / (step + 1), global_step)

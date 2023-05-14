@@ -21,7 +21,7 @@ num_workers: 2                # Number of workers in dataloader
 pin_memory: True             # This can fasten or slow down data loading depending on your hardware
 
 # Training
-batch_size: 128        # Batch size
+batch_size: 64        # Batch size
 epochs: 90           # Number of epochs
 overfit: False        # Train on one batch size only
 
